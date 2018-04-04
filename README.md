@@ -1,1 +1,4 @@
-# oracle_instructional_sql
+*********************************
+noetix sql/plsql intended to 
+manage my noetix accounts
+*********************************
