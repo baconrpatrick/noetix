@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+--erroneously placed 2 quotation in nwb when I should have used 1
+--be careful in nwb, preferred to use the gui, but gui was taking 
+--for ever
+----------------------------------------------------------------
+
+UPDATE wb_view_where_templates
+SET
+    where_clause = replace(where_clause,'''''','''')
+WHERE
+    1 = 1
+    AND where_clause LIKE '%Product Type%';
+    
