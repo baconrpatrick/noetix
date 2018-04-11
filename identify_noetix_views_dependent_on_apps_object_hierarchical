@@ -1,0 +1,23 @@
+
+SELECT
+    dd.owner,
+    dd.name,
+    dd.referenced_owner,
+    dd.referenced_name,
+    dd.type,
+    dd.owner
+    || '.'
+    || dd.name object_name,
+    dd.referenced_owner
+    || '.'
+    || dd.referenced_name referenced_object_name
+FROM
+    dba_dependencies dd
+WHERE
+    1 = 1
+START WITH dd.owner IN (
+    'NOETIX_SYS'
+)
+           AND dd.referenced_name = :b_apps_table||'#'
+           AND dd.referenced_owner = 'WSH' CONNECT BY NOCYCLE PRIOR dd.name = dd.referenced_name
+                                                              AND PRIOR dd.owner = dd.referenced_owner;
