@@ -1,0 +1,33 @@
+
+--use apps
+BEGIN dbms_session.reset_package; END;
+/
+
+
+
+DECLARE
+    v_fnd_user_name            fnd_user.user_name%TYPE;
+    v_error_code               NUMBER(38);
+    v_error_message            VARCHAR2(200);
+BEGIN
+    v_fnd_user_name := 'DOEJ';
+    APPS.XXNAO_MAP_USER_APPS_INIT ( i_noetix_sys_user_name => 'XXNOETIX',
+                                                      i_mapping_user_name => v_fnd_user_name,
+                                                      i_user_server_name  =>   'obiee',
+                                                      i_enable_output     =>    'Y'   );
+END;
+/
+
+
+--------------------
+
+
+SELECT
+    *
+FROM
+    xxnoetix.qa_collection_plan_rslts
+WHERE
+    collection_id = 1424398
+FETCH FIRST ROW ONLY;
+
+
