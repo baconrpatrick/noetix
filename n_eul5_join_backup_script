@@ -1,0 +1,514 @@
+---------------------------------------------------------
+/*
+--execute these grants 1 time in production-------
+GRANT ALL ON EUL5_US.EUL5_KEY_CONS TO NOETIX_SYS;
+GRANT ALL ON EUL5_US.EUL5_ID_SEQ TO NOETIX_SYS;
+
+--------------------------------------------------
+--before eul regen, execute this ddl
+
+CREATE  TABLE noetix_sys.n_eul5_join_backup
+    AS
+        SELECT
+    --key constraint table
+    --kc.key_id,
+    kc.key_type,
+    kc.key_name,
+    kc.key_developer_key,
+    kc.key_description,
+    kc.key_ext_key,
+    --kobjs.obj_id key_obj_id,
+    kc.uk_primary,
+    kc.fk_key_id_remote,
+    --fobjs.obj_id fk_obj_id_remote,
+    kc.fk_one_to_one,
+    kc.fk_mstr_no_detail,
+    kc.fk_dtl_no_master,
+    kc.fk_mandatory,
+    kc.key_user_prop2,
+    kc.key_user_prop1,
+    kc.key_element_state,
+    kc.key_created_by,
+    kc.key_created_date,
+    kc.key_updated_by,
+    kc.key_updated_date,
+    kc.notm  key_constraint_notm,
+    --jp eul5_expressions table
+    --jex.exp_id,
+    jex.exp_type,
+    jex.exp_name,
+    jex.exp_developer_key,
+    jex.exp_description,
+    --jex.EXP_FORMULA1,
+    REGEXP_SUBSTR(jex.exp_formula1, '\[\d+,\d+\]', 1, 1) jp_exp_formula1_segment1,
+    jex.exp_data_type,
+    jex.exp_sequence,
+    jex.it_dom_id,
+    jex.it_obj_id,
+    jex.it_doc_id,
+    jex.it_format_mask,
+    jex.it_max_data_width,
+    jex.it_max_disp_width,
+    jex.it_alignment,
+    jex.it_word_wrap,
+    jex.it_disp_null_val,
+    jex.it_fun_id,
+    jex.it_heading,
+    jex.it_hidden,
+    jex.it_placement,
+    jex.it_user_def_fmt,
+    jex.it_case_storage,
+    jex.it_case_display,
+    jex.it_ext_column,
+    jex.it_descriptor_id,
+    jex.ci_it_id,
+    jex.ci_runtime_item,
+    jex.par_multiple_vals,
+    jex.co_nullable,
+    jex.p_case_sensitive,
+    --jex.JP_KEY_ID,
+    jex.fil_obj_id,
+    jex.fil_doc_id,
+    jex.fil_runtime_filter,
+    jex.fil_app_type,
+    jex.fil_ext_filter,
+    jex.par_optional,
+    jex.par_lov_desc_ids,
+    jex.exp_user_prop2,
+    jex.exp_user_prop1,
+    jex.exp_element_state,
+    jex.exp_created_by,
+    jex.exp_created_date,
+    jex.exp_updated_by,
+    jex.exp_updated_date,
+    jex.notm                 jp_exp_notm,
+    -- loose ends associated with exp and objs
+    coexp1.exp_name          exp_name1,
+    coexp1.it_ext_column     it_ext_column1,
+    obj1.obj_developer_key   obj_developer_key1,
+    coexp2.exp_name          exp_name2,
+    coexp2.it_ext_column     it_ext_column2,
+    obj2.obj_developer_key   obj_developer_key2
+FROM
+    eul5_us.eul5_key_cons      kc
+    JOIN eul5_us.eul5_expressions   jex ON kc.key_id = jex.jp_key_id
+                                         AND jex.exp_developer_key = 'JOIN_PREDICATE'
+                                         AND jex.exp_type = 'JP'
+    JOIN eul5_us.eul5_expressions   coexp1 ON regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 2) = coexp1.exp_formula1
+                                            AND coexp1.exp_type = 'CO'
+    JOIN eul5_us.eul5_expressions   coexp2 ON regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 3) = coexp2.exp_formula1
+                                            AND coexp2.exp_type = 'CO'
+    JOIN eul5_us.eul5_objs          obj1 ON coexp1.it_obj_id = obj1.obj_id
+                                   AND obj1.obj_type = 'SOBJ'
+    JOIN eul5_us.eul5_objs          obj2 ON coexp2.it_obj_id = obj2.obj_id
+                                   AND obj2.obj_type = 'SOBJ'
+WHERE
+    1 = 1
+    AND jex.exp_type = 'JP'
+    AND jex.exp_developer_key = 'JOIN_PREDICATE'
+    AND kc.key_name NOT LIKE 'AUTO_GENERATED_NAME%'
+    ---testing
+    ---AND kc.key_name = 'Z$ join from GMEG_Batch_Headers_Summary to GMEG_Batch_Material_Details'
+    ;
+
+*/
+
+---------------------------------------------------------
+DECLARE
+    v_eul5_key_cons_key_id         eul5_us.eul5_key_cons.key_id%TYPE;
+    v_eul5_expressions_jp_exp_id   eul5_us.eul5_expressions.exp_id%TYPE;
+    v_eul5_exp_exp_fk              eul5_us.eul5_expressions.exp_id%TYPE;
+    v_eul5_exp_exp_pk              eul5_us.eul5_expressions.exp_id%TYPE;
+    v_eul5_exp_deps_ed_id1         eul5_us.eul5_exp_deps.ed_id%TYPE;
+    v_eul5_exp_deps_ed_id2         eul5_us.eul5_exp_deps.ed_id%TYPE;
+    v_exp_formula1_pk              eul5_us.eul5_expressions.exp_formula1%TYPE;
+    v_key_obj_id                   eul5_us.eul5_objs.obj_id%TYPE;
+    v_exp_formula1_fk              eul5_us.eul5_expressions.exp_formula1%TYPE;
+    v_fk_obj_id_remote  eul5_us.eul5_objs.obj_id%TYPE;
+    v_error_code                   NUMBER(38);
+    v_error_message                VARCHAR2(200);
+BEGIN
+    FOR v_key_cons_record IN (
+        SELECT
+          --key constraint table
+          --kc.key_id,
+            key_type,
+            key_name,
+            key_developer_key,
+            key_description,
+            key_ext_key,
+          --kobjs.obj_id key_obj_id,
+            uk_primary,
+            fk_key_id_remote,
+          --fobjs.obj_id fk_obj_id_remote,
+            fk_one_to_one,
+            fk_mstr_no_detail,
+            fk_dtl_no_master,
+            fk_mandatory,
+            key_user_prop2,
+            key_user_prop1,
+            key_element_state,
+            key_created_by,
+            key_created_date,
+            key_updated_by,
+            key_updated_date,
+            key_constraint_notm,
+          --jp eul5_expressions table
+          --exp_id,
+            exp_type,
+            exp_name,
+            exp_developer_key,
+            exp_description,
+          --exp_formula1,
+            jp_exp_formula1_segment1,
+            exp_data_type,
+            exp_sequence,
+            it_dom_id,
+            it_obj_id,
+            it_doc_id,
+            it_format_mask,
+            it_max_data_width,
+            it_max_disp_width,
+            it_alignment,
+            it_word_wrap,
+            it_disp_null_val,
+            it_fun_id,
+            it_heading,
+            it_hidden,
+            it_placement,
+            it_user_def_fmt,
+            it_case_storage,
+            it_case_display,
+            it_ext_column,
+            it_descriptor_id,
+            ci_it_id,
+            ci_runtime_item,
+            par_multiple_vals,
+            co_nullable,
+            p_case_sensitive,
+          --jp_key_id,
+            fil_obj_id,
+            fil_doc_id,
+            fil_runtime_filter,
+            fil_app_type,
+            fil_ext_filter,
+            par_optional,
+            par_lov_desc_ids,
+            exp_user_prop2,
+            exp_user_prop1,
+            exp_element_state,
+            exp_created_by,
+            exp_created_date,
+            exp_updated_by,
+            exp_updated_date,
+            jp_exp_notm,
+          -- loose ends associated with exp and objs
+            exp_name1,
+            it_ext_column1,
+            obj_developer_key1,
+            exp_name2,
+            it_ext_column2,
+            obj_developer_key2
+        FROM
+            noetix_sys.n_eul5_join_backup
+    ) LOOP
+        BEGIN
+            dbms_output.put_line(v_key_cons_record.key_name);
+
+          --  get new exp and obj information
+            SELECT
+                col_exp.exp_id,
+          --to_number(regexp_substr(col_exp.exp_formula1,'\[\d,(\d+)\]',1,2,NULL,1) ) pk_key_id,
+                col_exp.exp_formula1,
+                objs.obj_id key_obj_id
+            INTO
+                v_eul5_exp_exp_pk,
+                v_exp_formula1_pk,
+                v_key_obj_id
+            FROM
+                eul5_us.eul5_expressions   col_exp
+                JOIN eul5_us.eul5_objs          objs ON col_exp.it_obj_id = objs.obj_id
+                                               AND objs.obj_type = 'SOBJ'
+                                               AND col_exp.exp_type = 'CO'
+            WHERE
+                col_exp.exp_name = v_key_cons_record.exp_name2
+                AND col_exp.it_ext_column = v_key_cons_record.it_ext_column2
+                AND objs.obj_developer_key = v_key_cons_record.obj_developer_key2;
+
+            SELECT
+                col_exp.exp_id,
+          --to_number(regexp_substr(col_exp.exp_formula1,'\[\d,(\d+)\]',1,2,NULL,1) ) fk_key_id,
+                col_exp.exp_formula1,
+                objs.obj_id fk_obj_id_remote
+            INTO
+                v_eul5_exp_exp_fk,
+                v_exp_formula1_fk,
+                v_fk_obj_id_remote
+            FROM
+                eul5_us.eul5_expressions   col_exp
+                JOIN eul5_us.eul5_objs          objs ON col_exp.it_obj_id = objs.obj_id
+                                               AND objs.obj_type = 'SOBJ'
+                                               AND col_exp.exp_type = 'CO'
+            WHERE
+                col_exp.exp_name = v_key_cons_record.exp_name1
+                AND col_exp.it_ext_column = v_key_cons_record.it_ext_column1
+                AND objs.obj_developer_key = v_key_cons_record.obj_developer_key1;
+
+            dbms_output.put_line(' v_exp_formula1_pk = ' || TO_CHAR(v_exp_formula1_pk));
+            dbms_output.put_line(' v_key_obj_id= ' || TO_CHAR(v_key_obj_id));
+            dbms_output.put_line(' v_exp_formula1_fk= ' || TO_CHAR(v_exp_formula1_fk));
+            dbms_output.put_line(' v_fk_obj_id_remote= ' || TO_CHAR(v_fk_obj_id_remote));
+            v_eul5_key_cons_key_id := eul5_us.eul5_id_seq.nextval;
+            INSERT INTO eul5_us.eul5_key_cons (
+                key_id,
+                key_type,
+                key_name,
+                key_developer_key,
+                key_description,
+                key_ext_key,
+                key_obj_id,
+                uk_primary,
+                fk_key_id_remote,
+                fk_obj_id_remote,
+                fk_one_to_one,
+                fk_mstr_no_detail,
+                fk_dtl_no_master,
+                fk_mandatory,
+                key_user_prop2,
+                key_user_prop1,
+                key_element_state,
+                key_created_by,
+                key_created_date,
+                key_updated_by,
+                key_updated_date,
+                notm
+            ) VALUES (
+                v_eul5_key_cons_key_id,
+                v_key_cons_record.key_type,
+                v_key_cons_record.key_name,
+                v_key_cons_record.key_developer_key,
+                v_key_cons_record.key_description,
+                v_key_cons_record.key_ext_key,
+                v_key_obj_id,
+                v_key_cons_record.uk_primary,
+                v_key_cons_record.fk_key_id_remote,
+                v_fk_obj_id_remote,
+                v_key_cons_record.fk_one_to_one,
+                v_key_cons_record.fk_mstr_no_detail,
+                v_key_cons_record.fk_dtl_no_master,
+                v_key_cons_record.fk_mandatory,
+                v_key_cons_record.key_user_prop2,
+                v_key_cons_record.key_user_prop1,
+                v_key_cons_record.key_element_state,
+                v_key_cons_record.key_created_by,
+                v_key_cons_record.key_created_date,
+                v_key_cons_record.key_updated_by,
+                SYSDATE,
+                v_key_cons_record.key_constraint_notm
+            );
+
+            dbms_output.put_line('v_eul5_key_cons_key_id: ' || v_eul5_key_cons_key_id);
+
+  -------------------- jp eul5_expression insertion
+            v_eul5_expressions_jp_exp_id := eul5_us.eul5_id_seq.nextval;
+            INSERT INTO eul5_us.eul5_expressions (
+                exp_id,
+                exp_type,
+                exp_name,
+                exp_developer_key,
+                exp_description,
+                exp_formula1,
+                exp_data_type,
+                exp_sequence,
+                it_dom_id,
+                it_obj_id,
+                it_doc_id,
+                it_format_mask,
+                it_max_data_width,
+                it_max_disp_width,
+                it_alignment,
+                it_word_wrap,
+                it_disp_null_val,
+                it_fun_id,
+                it_heading,
+                it_hidden,
+                it_placement,
+                it_user_def_fmt,
+                it_case_storage,
+                it_case_display,
+                it_ext_column,
+                it_descriptor_id,
+                ci_it_id,
+                ci_runtime_item,
+                par_multiple_vals,
+                co_nullable,
+                p_case_sensitive,
+                jp_key_id,
+                fil_obj_id,
+                fil_doc_id,
+                fil_runtime_filter,
+                fil_app_type,
+                fil_ext_filter,
+                par_optional,
+                par_lov_desc_ids,
+                exp_user_prop2,
+                exp_user_prop1,
+                exp_element_state,
+                exp_created_by,
+                exp_created_date,
+                exp_updated_by,
+                exp_updated_date,
+                notm
+            ) VALUES (
+                v_eul5_expressions_jp_exp_id,
+                v_key_cons_record.exp_type,
+                v_key_cons_record.exp_name,
+                v_key_cons_record.exp_developer_key,
+                v_key_cons_record.exp_description,
+                v_key_cons_record.jp_exp_formula1_segment1
+                || '('
+                || v_exp_formula1_fk
+                || ','
+                || v_exp_formula1_pk
+                || ')',
+                v_key_cons_record.exp_data_type,
+                v_key_cons_record.exp_sequence,
+                v_key_cons_record.it_dom_id,
+                v_key_cons_record.it_obj_id,
+                v_key_cons_record.it_doc_id,
+                v_key_cons_record.it_format_mask,
+                v_key_cons_record.it_max_data_width,
+                v_key_cons_record.it_max_disp_width,
+                v_key_cons_record.it_alignment,
+                v_key_cons_record.it_word_wrap,
+                v_key_cons_record.it_disp_null_val,
+                v_key_cons_record.it_fun_id,
+                v_key_cons_record.it_heading,
+                v_key_cons_record.it_hidden,
+                v_key_cons_record.it_placement,
+                v_key_cons_record.it_user_def_fmt,
+                v_key_cons_record.it_case_storage,
+                v_key_cons_record.it_case_display,
+                v_key_cons_record.it_ext_column,
+                v_key_cons_record.it_descriptor_id,
+                v_key_cons_record.ci_it_id,
+                v_key_cons_record.ci_runtime_item,
+                v_key_cons_record.par_multiple_vals,
+                v_key_cons_record.co_nullable,
+                v_key_cons_record.p_case_sensitive,
+                v_eul5_key_cons_key_id,
+                v_key_cons_record.fil_obj_id,
+                v_key_cons_record.fil_doc_id,
+                v_key_cons_record.fil_runtime_filter,
+                v_key_cons_record.fil_app_type,
+                v_key_cons_record.fil_ext_filter,
+                v_key_cons_record.par_optional,
+                v_key_cons_record.par_lov_desc_ids,
+                v_key_cons_record.exp_user_prop2,
+                v_key_cons_record.exp_user_prop1,
+                v_key_cons_record.exp_element_state,
+                v_key_cons_record.exp_created_by,
+                v_key_cons_record.exp_created_date,
+                v_key_cons_record.exp_updated_by,
+                v_key_cons_record.exp_updated_date,
+                v_key_cons_record.jp_exp_notm
+            );
+
+            dbms_output.put_line('v_eul5_exp_exp_pk => ' || v_eul5_exp_exp_pk);
+            dbms_output.put_line('v_eul5_exp_exp_fk => ' || v_eul5_exp_exp_fk);
+            dbms_output.put_line('v_eul5_expressions_jp_exp_id => ' || v_eul5_expressions_jp_exp_id);
+            dbms_output.put_line(v_key_cons_record.jp_exp_formula1_segment1
+                                 || '('
+                                 || v_exp_formula1_fk
+                                 || ','
+                                 || v_exp_formula1_pk
+                                 || ')');
+
+            v_eul5_exp_deps_ed_id1 := eul5_us.eul5_id_seq.nextval;
+            v_eul5_exp_deps_ed_id2 := eul5_us.eul5_id_seq.nextval;
+            INSERT INTO eul5_us.eul5_exp_deps (
+                ed_id,
+                ed_type,
+                pd_p_id,
+                ped_exp_id,
+                pfd_fun_id,
+                psd_sq_id,
+                cd_exp_id,
+                cfd_fun_id,
+                cid_exp_id,
+                ed_element_state,
+                ed_created_by,
+                ed_created_date,
+                ed_updated_by,
+                ed_updated_date,
+                notm
+            ) VALUES (
+                v_eul5_exp_deps_ed_id1,
+                'PED',
+                v_eul5_expressions_jp_exp_id,
+                v_eul5_exp_exp_pk,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                0,
+                v_key_cons_record.key_created_by,
+                v_key_cons_record.key_created_date,
+                v_key_cons_record.key_updated_by,
+                v_key_cons_record.key_updated_date,
+                0
+            );
+
+            INSERT INTO eul5_us.eul5_exp_deps (
+                ed_id,
+                ed_type,
+                pd_p_id,
+                ped_exp_id,
+                pfd_fun_id,
+                psd_sq_id,
+                cd_exp_id,
+                cfd_fun_id,
+                cid_exp_id,
+                ed_element_state,
+                ed_created_by,
+                ed_created_date,
+                ed_updated_by,
+                ed_updated_date,
+                notm
+            ) VALUES (
+                v_eul5_exp_deps_ed_id2,
+                'PED',
+                v_eul5_expressions_jp_exp_id,
+                v_eul5_exp_exp_fk,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                0,
+                v_key_cons_record.key_created_by,
+                v_key_cons_record.key_created_date,
+                v_key_cons_record.key_updated_by,
+                v_key_cons_record.key_updated_date,
+                0
+            );
+
+        EXCEPTION
+            WHEN OTHERS THEN
+                v_error_code := sqlcode;
+                v_error_message := sqlerrm;
+                dbms_output.put_line(TO_CHAR(v_error_code)
+                                     || '- '
+                                     || v_error_message);
+        END;
+    END LOOP;
+EXCEPTION
+    WHEN OTHERS THEN
+        v_error_code := sqlcode;
+        v_error_message := sqlerrm;
+        dbms_output.put_line(TO_CHAR(v_error_code)
+                             || '- '
+                             || v_error_message);
+END;
+/
