@@ -111,6 +111,34 @@ WHERE
     ---AND kc.key_name = 'Z$ join from GMEG_Batch_Headers_Summary to GMEG_Batch_Material_Details'
     ;
 
+-- also preceding the eul generation some errors have been thrown associated with 
+-- b.a. unique contraints and folder unique constraints
+-- I execute this:
+
+CREATE TABLE n_eul_gen_folders_backup
+    AS
+        SELECT
+            *
+        FROM
+            n_eul_gen_folders;
+            
+CREATE TABLE n_eul_gen_b_a_backup
+    AS
+        SELECT
+            *
+        FROM
+            n_eul_gen_business_areas; 
+            
+
+TRUNCATE TABLE n_eul_gen_folders;
+TRUNCATE TABLE n_eul_gen_business_areas;
+COMMIT;
+
+--RUN EUL Generator
+
+--Run this post eul generator script to re-create
+--custom view joins
+
 */
 
 ---------------------------------------------------------
