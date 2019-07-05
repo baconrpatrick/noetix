@@ -7,110 +7,112 @@ GRANT ALL ON EUL5_US.EUL5_ID_SEQ TO NOETIX_SYS;
 --------------------------------------------------
 --before eul regen, execute this ddl
 
-CREATE  TABLE noetix_sys.n_eul5_join_backup
+CREATE TABLE noetix_sys.n_eul5_join_backup
     AS
         SELECT
     --key constraint table
     --kc.key_id,
-    kc.key_type,
-    kc.key_name,
-    kc.key_developer_key,
-    kc.key_description,
-    kc.key_ext_key,
+            kc.key_type,
+            kc.key_name,
+            kc.key_developer_key,
+            kc.key_description,
+            kc.key_ext_key,
     --kobjs.obj_id key_obj_id,
-    kc.uk_primary,
-    kc.fk_key_id_remote,
+            kc.uk_primary,
+            kc.fk_key_id_remote,
     --fobjs.obj_id fk_obj_id_remote,
-    kc.fk_one_to_one,
-    kc.fk_mstr_no_detail,
-    kc.fk_dtl_no_master,
-    kc.fk_mandatory,
-    kc.key_user_prop2,
-    kc.key_user_prop1,
-    kc.key_element_state,
-    kc.key_created_by,
-    kc.key_created_date,
-    kc.key_updated_by,
-    kc.key_updated_date,
-    kc.notm  key_constraint_notm,
+            kc.fk_one_to_one,
+            kc.fk_mstr_no_detail,
+            kc.fk_dtl_no_master,
+            kc.fk_mandatory,
+            kc.key_user_prop2,
+            kc.key_user_prop1,
+            kc.key_element_state,
+            kc.key_created_by,
+            kc.key_created_date,
+            kc.key_updated_by,
+            kc.key_updated_date,
+            kc.notm                  key_constraint_notm,
     --jp eul5_expressions table
     --jex.exp_id,
-    jex.exp_type,
-    jex.exp_name,
-    jex.exp_developer_key,
-    jex.exp_description,
+            jex.exp_type,
+            jex.exp_name,
+            jex.exp_developer_key,
+            jex.exp_description,
     --jex.EXP_FORMULA1,
-    REGEXP_SUBSTR(jex.exp_formula1, '\[\d+,\d+\]', 1, 1) jp_exp_formula1_segment1,
-    jex.exp_data_type,
-    jex.exp_sequence,
-    jex.it_dom_id,
-    jex.it_obj_id,
-    jex.it_doc_id,
-    jex.it_format_mask,
-    jex.it_max_data_width,
-    jex.it_max_disp_width,
-    jex.it_alignment,
-    jex.it_word_wrap,
-    jex.it_disp_null_val,
-    jex.it_fun_id,
-    jex.it_heading,
-    jex.it_hidden,
-    jex.it_placement,
-    jex.it_user_def_fmt,
-    jex.it_case_storage,
-    jex.it_case_display,
-    jex.it_ext_column,
-    jex.it_descriptor_id,
-    jex.ci_it_id,
-    jex.ci_runtime_item,
-    jex.par_multiple_vals,
-    jex.co_nullable,
-    jex.p_case_sensitive,
+            regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 1) jp_exp_formula1_segment1,
+            jex.exp_data_type,
+            jex.exp_sequence,
+            jex.it_dom_id,
+            jex.it_obj_id,
+            jex.it_doc_id,
+            jex.it_format_mask,
+            jex.it_max_data_width,
+            jex.it_max_disp_width,
+            jex.it_alignment,
+            jex.it_word_wrap,
+            jex.it_disp_null_val,
+            jex.it_fun_id,
+            jex.it_heading,
+            jex.it_hidden,
+            jex.it_placement,
+            jex.it_user_def_fmt,
+            jex.it_case_storage,
+            jex.it_case_display,
+            jex.it_ext_column,
+            jex.it_descriptor_id,
+            jex.ci_it_id,
+            jex.ci_runtime_item,
+            jex.par_multiple_vals,
+            jex.co_nullable,
+            jex.p_case_sensitive,
     --jex.JP_KEY_ID,
-    jex.fil_obj_id,
-    jex.fil_doc_id,
-    jex.fil_runtime_filter,
-    jex.fil_app_type,
-    jex.fil_ext_filter,
-    jex.par_optional,
-    jex.par_lov_desc_ids,
-    jex.exp_user_prop2,
-    jex.exp_user_prop1,
-    jex.exp_element_state,
-    jex.exp_created_by,
-    jex.exp_created_date,
-    jex.exp_updated_by,
-    jex.exp_updated_date,
-    jex.notm                 jp_exp_notm,
+            jex.fil_obj_id,
+            jex.fil_doc_id,
+            jex.fil_runtime_filter,
+            jex.fil_app_type,
+            jex.fil_ext_filter,
+            jex.par_optional,
+            jex.par_lov_desc_ids,
+            jex.exp_user_prop2,
+            jex.exp_user_prop1,
+            jex.exp_element_state,
+            jex.exp_created_by,
+            jex.exp_created_date,
+            jex.exp_updated_by,
+            jex.exp_updated_date,
+            jex.notm                 jp_exp_notm,
     -- loose ends associated with exp and objs
-    coexp1.exp_name          exp_name1,
-    coexp1.it_ext_column     it_ext_column1,
-    obj1.obj_developer_key   obj_developer_key1,
-    coexp2.exp_name          exp_name2,
-    coexp2.it_ext_column     it_ext_column2,
-    obj2.obj_developer_key   obj_developer_key2
-FROM
-    eul5_us.eul5_key_cons      kc
-    JOIN eul5_us.eul5_expressions   jex ON kc.key_id = jex.jp_key_id
-                                         AND jex.exp_developer_key = 'JOIN_PREDICATE'
-                                         AND jex.exp_type = 'JP'
-    JOIN eul5_us.eul5_expressions   coexp1 ON regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 2) = coexp1.exp_formula1
-                                            AND coexp1.exp_type = 'CO'
-    JOIN eul5_us.eul5_expressions   coexp2 ON regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 3) = coexp2.exp_formula1
-                                            AND coexp2.exp_type = 'CO'
-    JOIN eul5_us.eul5_objs          obj1 ON coexp1.it_obj_id = obj1.obj_id
-                                   AND obj1.obj_type = 'SOBJ'
-    JOIN eul5_us.eul5_objs          obj2 ON coexp2.it_obj_id = obj2.obj_id
-                                   AND obj2.obj_type = 'SOBJ'
-WHERE
-    1 = 1
-    AND jex.exp_type = 'JP'
-    AND jex.exp_developer_key = 'JOIN_PREDICATE'
-    AND kc.key_name NOT LIKE 'AUTO_GENERATED_NAME%'
+            coexp1.exp_name          exp_name1,
+            coexp1.it_ext_column     it_ext_column1,
+            obj1.obj_developer_key   obj_developer_key1,
+            coexp2.exp_name          exp_name2,
+            coexp2.it_ext_column     it_ext_column2,
+            obj2.obj_developer_key   obj_developer_key2
+        FROM
+            eul5_us.eul5_key_cons      kc
+            JOIN eul5_us.eul5_expressions   jex ON kc.key_id = jex.jp_key_id
+                                                 AND jex.exp_developer_key = 'JOIN_PREDICATE'
+                                                 AND jex.exp_type = 'JP'
+            JOIN eul5_us.eul5_expressions   coexp1 ON regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 2) = replace(coexp1.exp_formula1
+            , ' ')
+                                                    AND coexp1.exp_type = 'CO'
+            JOIN eul5_us.eul5_expressions   coexp2 ON replace(regexp_substr(jex.exp_formula1, '\[\d+,\d+\]', 1, 3), ' ') = replace(coexp2
+            .exp_formula1, ' ')
+                                                    AND coexp2.exp_type = 'CO'
+            JOIN eul5_us.eul5_objs          obj1 ON coexp1.it_obj_id = obj1.obj_id
+                                           AND obj1.obj_type = 'SOBJ'
+            JOIN eul5_us.eul5_objs          obj2 ON coexp2.it_obj_id = obj2.obj_id
+                                           AND obj2.obj_type = 'SOBJ'
+        WHERE
+            1 = 1
+            AND jex.exp_type = 'JP'
+            AND kc.key_name NOT LIKE 'AUTO_GENERATED_NAME%'
+   -- and kc.key_name like 'Z$CSG_Service_Requests (CSG_Service_Requests/CSG_Charge_Details) {221781}'
     ---testing
     ---AND kc.key_name = 'Z$ join from GMEG_Batch_Headers_Summary to GMEG_Batch_Material_Details'
-    ;
-
+            ;
+            
 -- also preceding the eul generation some errors have been thrown associated with 
 -- b.a. unique contraints and folder unique constraints
 -- I execute this:
