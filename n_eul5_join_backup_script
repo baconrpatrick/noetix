@@ -1,11 +1,18 @@
 ---------------------------------------------------------
 /*
 --execute these grants 1 time in production-------
+--use eul5_us@erp
+--should be unecessary because login to eul generator
+--does this
+
 GRANT ALL ON EUL5_US.EUL5_KEY_CONS TO NOETIX_SYS;
 GRANT ALL ON EUL5_US.EUL5_ID_SEQ TO NOETIX_SYS;
 
 --------------------------------------------------
 --before eul regen, execute this ddl
+--using noetix_sys@erp
+--
+--this backs up current custom view join info
 
 CREATE TABLE noetix_sys.n_eul5_join_backup
     AS
@@ -115,7 +122,7 @@ CREATE TABLE noetix_sys.n_eul5_join_backup
             
 -- also preceding the eul generation some errors have been thrown associated with 
 -- b.a. unique contraints and folder unique constraints
--- I execute this:
+-- execute this in noetix_sys@erp:
 
 CREATE TABLE n_eul_gen_folders_backup
     AS
@@ -124,34 +131,9 @@ CREATE TABLE n_eul_gen_folders_backup
         FROM
             n_eul_gen_folders;
             
-            
--- WRONG HISTORIC PREFIXED BA E.G. STD WITH GLOBAL OR NUMERIC PREFIX
--- THROWS UNIQUE CONSTRAINT ERROR BECAUSE FIXING PREFIX
---DELETE FROM n_eul_gen_folders
---WHERE
---    1 = 1
---    AND application_label IN (
---        'AP',
---        'AR',
---        'BOM',
---        'EAM',
---        'OE',
---        'PA',
---        'PO'
---    )
---    AND instance_type IN (
---        'S'
---    )
---    AND org_type_code = 'ORG_ID'
---    AND organizational_unit_code IN (
---        '82',
---        '84',
---        '1217',
---        '1672'
---    );
-            
+         
      
-            
+ -- execute this in noetix_sys@erp:           
 CREATE TABLE n_eul_gen_b_a_backup
     AS
         SELECT
@@ -159,16 +141,14 @@ CREATE TABLE n_eul_gen_b_a_backup
         FROM
             n_eul_gen_business_areas; 
             
-  
--- WRONG HISTORIC PREFIXED BA E.G. STD WITH GLOBAL OR NUMERIC PREFIX
--- THROWS UNIQUE CONSTRAINT ERROR BECAUSE FIXING PREFIX
---delete FROM n_eul_gen_business_areas
---WHERE
---    eul_ba_name in(
---        'AP_PAYABLES', 'AR_RECEIVABLES', 'BOM_COST_MANAGEMENT', 'EAM8_MAINTENANCE', 'EAM_MAINTENANCE', 'OEONT_ORDER_ENTRY', 'PA_PROJECTS'
---        , 'PO_PURCHASING'
---    );            
-            
+   
+--***this step is only necessary***
+--if we extract all roles right now.
+--magnitude support ticket#00144499 
+--should provide more guidance on 
+--if this step is maintained
+--if CS, CM, X0, all GL and all Globals
+--extracted, this is not needed
 
 TRUNCATE TABLE n_eul_gen_folders;
 TRUNCATE TABLE n_eul_gen_business_areas;
@@ -179,6 +159,7 @@ COMMIT;
 
 --Run this post eul generator script to re-create
 --custom view joins
+-- execute this in noetix_sys@erp:
 
 */
 
